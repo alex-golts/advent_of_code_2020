@@ -60,3 +60,56 @@ while not finished:
         mat = mat_new.copy()
 
 
+# part 2
+def is_out_of_bounds(mat, i, j):
+    if i<0 or j<0 or i>mat.shape[0]-1 or j>mat.shape[1]-1:
+        return True
+    else:
+        return False
+    
+
+def occupied_in_view(mat,i,j):
+    # [row,col]
+    directions = [[-1,-1], [-1,0], [-1,1], [1,1], [1,-1], [1,0], [0,1], [0,-1]]
+    sum_occupied = 0
+    for d in directions:
+        cur_i = i
+        cur_j = j
+        while True:
+            next_i = cur_i + d[0]
+            next_j = cur_j + d[1]
+            cur_i = next_i
+            cur_j = next_j
+            if is_out_of_bounds(mat, next_i, next_j):
+                break
+            if mat[next_i, next_j] == 1:
+                break
+            elif mat[next_i, next_j] == 2:
+                sum_occupied += 1
+                break
+    return sum_occupied
+
+
+def evolve2(mat):
+    mat_new = mat.copy()
+    for i in range(mat.shape[0]):
+        for j in range(mat.shape[1]):
+            if mat[i,j] == 1 and occupied_in_view(mat, i, j) == 0:
+                mat_new[i,j] = 2
+            if mat[i,j] == 2 and occupied_in_view(mat, i, j)>=5:
+                mat_new[i,j] = 1
+
+    return mat_new
+
+mat = map2mat(puzzle_input)
+finished = False
+cnt=0
+while not finished:  
+    cnt+=1    
+    print(cnt)  
+    mat_new = evolve2(mat)
+    if not has_changed(mat_new, mat):
+        finished = True
+        print(f'part 2 result = {np.sum(mat_new==2)}')
+    else:
+        mat = mat_new.copy()
