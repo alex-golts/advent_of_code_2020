@@ -1,3 +1,5 @@
+import itertools
+
 f = open('input14.txt','r')
 txt = f.read()
 puzzle_input = txt.split('\n')[:-1]
@@ -37,3 +39,37 @@ for key in memory:
 
 print(f'part 1 answer = {tot_sum}')
                 
+
+# part 2:
+memory = {}
+for line in puzzle_input:
+    typ, arg1, arg2 = parse_line(line)
+    if typ=='mask':
+        cur_mask = arg1
+    if typ=='mem':
+        addr_bin_str = bin(arg1)[2:].zfill(36)
+        
+        # number of floating numbers in mask:
+        num_floating = cur_mask.count('X')
+        
+        # all possible enumerations of floating numbers in mask:
+        floating_seqs = [seq for seq in itertools.product("01", repeat=num_floating)]
+        
+        for seq in floating_seqs:
+            cur_addr_str = [c for c in addr_bin_str]
+            cnt_floating = 0
+            for i,c in enumerate(cur_mask):
+                if c == '1':
+                    cur_addr_str[i] = '1'
+                elif c == 'X':
+                    cur_addr_str[i] = seq[cnt_floating]
+                    cnt_floating += 1
+            cur_addr_int = int(''.join(cur_addr_str), 2)
+            memory[cur_addr_int] = arg2
+            
+    
+tot_sum = 0
+for key in memory:
+    tot_sum += memory[key]
+
+print(f'part 2 answer = {tot_sum}')
