@@ -1,16 +1,22 @@
+import re
+
 f = open('input18.txt','r')
 txt = f.read()
 txt = txt.split('\n')
 puzzle_input = txt[:-1]
 
-
-#sample = '2 * 3 + (4 * 5)'
-#sample = '2 * 3 + 1'
-#sample = '5 + (8 * 3 + 9 + 3 * 4 * 3)'
-#sample = '5 * 9 * (7 * 3 * 3 + 9 * 3 + (8 + 6 * 4))'
-sample = '((2 + 4 * 9) * (6 + 9 * 8 + 6) + 6) + 2 + 4 * 2'
-sample = sample.replace(' ','')
-
+def remove_brackets(expression):
+    # remove first brackets from expression that starts with '('
+    cnt_paren = 0
+    for i,c in enumerate(expression):
+        if c == '(':
+            cnt_paren+=1
+        if c == ')':
+            cnt_paren-=1
+        if cnt_paren == 0:
+            last_i = i
+            break
+    return expression[1:last_i]+expression[last_i+1:], last_i
 
 
 def solve(expression):
@@ -18,19 +24,9 @@ def solve(expression):
         return expression
     
     if expression[0] == '(':
-        cnt_paren = 0
-        for i,c in enumerate(expression):
-            if c == '(':
-                cnt_paren+=1
-            if c == ')':
-                cnt_paren-=1
-            if cnt_paren == 0:
-                last_i = i
-                break
-        #paren_str = expression[0:last_i]
+        expression, _ = remove_brackets(expression)
+        return solve(expression)
         
-        return solve(expression[1:last_i]+expression[last_i+1:])
-    
     else:
         # find first op:
         for i,c in enumerate(expression):
@@ -40,13 +36,14 @@ def solve(expression):
                 break
         left_side = expression[0:first_op_ind]
         
-        
         if left_side.isnumeric() and not expression[first_op_ind+1].isdigit():
+            _,last_bracket_ind = remove_brackets(expression[first_op_ind+1:])
             if first_op == '*':
-                return str(int(left_side) * int(solve(expression[first_op_ind+1:])))
+                expression = str(int(left_side) * int(solve(expression[first_op_ind+2:first_op_ind+last_bracket_ind+1]))) + expression[first_op_ind + last_bracket_ind+2:]
             elif first_op == '+':
-                return str(int(left_side) + int(solve(expression[first_op_ind+1:])))
-        
+                expression = str(int(left_side) + int(solve(expression[first_op_ind+2:first_op_ind+last_bracket_ind+1]))) + expression[first_op_ind + last_bracket_ind+2:]
+            return solve(expression)
+
         if left_side.isnumeric() and expression[first_op_ind+1].isdigit():
             if first_op == '*':
                 expression = str(int(left_side) * int(expression[first_op_ind+1])) + expression[first_op_ind+2:]
@@ -55,6 +52,60 @@ def solve(expression):
             return solve(expression)
     
     
-        
+results = []
+for line in puzzle_input:
+    line2 = line.replace(' ','')
+    results.append(int(solve(line2)))
 
-print(solve(sample))
+print(f'part 1 answer = {sum(results)}')
+
+# part 2:
+
+def get_trailing_number(s):
+    m = re.search(r'\d+$', s)
+    return m.group() if m else None
+
+def get_starting_number(s):
+    m = re.match(r'\d+', s)
+    return m.group() if m else None
+
+def solve2(expression):
+    if expression.isnumeric():
+        return expression
+    if expression[0] == '(':
+        expression, _ = remove_brackets(expression)
+        return solve2(expression)
+    plus_ind = expression.find('+')
+    if plus_ind>-1:
+        left_side = expression[0:plus_ind]
+        right_side = expression[plus_ind+1:]
+        
+        left_final_num = get_trailing_number(left_side)
+        right_first_num = get_starting_number(right_side)
+
+        if left_final_num is not None and right_first_num is not None:
+            left_side = left_side[0:-len(left_final_num)]
+            right_side = right_side[len(right_first_num):]
+            expression =  left_side + str(int(left_final_num)+int(right_first_num)) + right_first_num
+            return solve2(expression)
+        if left_final_num is not None and right_first_num is None:
+            left_side = left_side[0:-len(left_final_num)]
+            expression = left_side + str(int(left_final_num)+int(solve2(right_side)))
+            return solve2(expression)
+        if left_final_num is None and right_first_num is not None:
+            right_side = right_side[len(right_first_num):]
+            expression = str(int(solve2(left_side))+int(right_first_num)) + right_side
+            return solve2(expression)
+        if left_side.isnumeric() and right_side.isnumeric():
+            return str(int(left_side)+int(right_side)) 
+        else:
+            return str(int(solve2(left_side))+int(solve2(right_side)))
+    else:
+        return str(eval(expression))
+
+sample = '1 + (2 * 3) + (4 * (5 + 6))'
+#sample = '2 * 3 + (4 * 5)'
+sample=sample.replace(' ','')
+print(solve2(sample))
+
+
