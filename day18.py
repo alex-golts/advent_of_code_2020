@@ -18,7 +18,6 @@ def remove_brackets(expression):
             break
     return expression[1:last_i]+expression[last_i+1:], last_i
 
-
 def solve(expression):
     if expression.isnumeric():
         return expression
@@ -51,7 +50,6 @@ def solve(expression):
                 expression = str(int(left_side) + int(expression[first_op_ind+1])) + expression[first_op_ind+2:]
             return solve(expression)
     
-    
 results = []
 for line in puzzle_input:
     line2 = line.replace(' ','')
@@ -59,6 +57,7 @@ for line in puzzle_input:
 
 print(f'part 1 answer = {sum(results)}')
 
+################################################################################
 # part 2:
 
 def get_trailing_number(s):
@@ -72,21 +71,27 @@ def get_starting_number(s):
 def solve2(expression):
     if expression.isnumeric():
         return expression
-    if expression[0] == '(':
-        expression, _ = remove_brackets(expression)
+    # look for parentheses
+    paren_ind = expression.find('(')
+    if paren_ind>-1:
+        # find closing parentheses
+        expression_without_parens, last_ind = remove_brackets(expression[paren_ind:]) 
+        closing_paren_ind = paren_ind + last_ind
+        # if expression is of the form ($something), then just return the solution for $something
+        if paren_ind == 0 and closing_paren_ind == len(expression)-1:
+            return solve2(expression_without_parens)
+        expression = expression[0:paren_ind]+solve2(expression[paren_ind:closing_paren_ind+1])+expression[closing_paren_ind+1:]
         return solve2(expression)
     plus_ind = expression.find('+')
     if plus_ind>-1:
         left_side = expression[0:plus_ind]
         right_side = expression[plus_ind+1:]
-        
         left_final_num = get_trailing_number(left_side)
         right_first_num = get_starting_number(right_side)
-
         if left_final_num is not None and right_first_num is not None:
             left_side = left_side[0:-len(left_final_num)]
             right_side = right_side[len(right_first_num):]
-            expression =  left_side + str(int(left_final_num)+int(right_first_num)) + right_first_num
+            expression =  left_side + str(int(left_final_num)+int(right_first_num)) + right_side
             return solve2(expression)
         if left_final_num is not None and right_first_num is None:
             left_side = left_side[0:-len(left_final_num)]
@@ -103,9 +108,10 @@ def solve2(expression):
     else:
         return str(eval(expression))
 
-sample = '1 + (2 * 3) + (4 * (5 + 6))'
-#sample = '2 * 3 + (4 * 5)'
-sample=sample.replace(' ','')
-print(solve2(sample))
+results = []
+for line in puzzle_input:
+    line2 = line.replace(' ','')
+    results.append(int(solve2(line2)))
 
+print(f'part 2 answer = {sum(results)}')
 
